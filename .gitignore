@@ -1,0 +1,42 @@
+# Environments & Secrets
+.env
+.env*.local
+!.env.example
+*.pem
+*.key
+*.cert
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Database & local state
+*.db
+*.sqlite3
+postgres_data/
+redis_data/
+
+# Node & Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Logs & temp
+*.log
+/tmp/
+workspace/
+.system_generated/
+scratch/
+
