@@ -17,13 +17,20 @@ async_db_url = database_url
 if is_sqlite and not database_url.startswith("sqlite+aiosqlite:"):
     async_db_url = database_url.replace("sqlite://", "sqlite+aiosqlite://")
 
+import sys
+from sqlalchemy.pool import NullPool
+
 engine_kwargs = {}
 if not is_sqlite:
-    engine_kwargs.update({
-        "pool_size": 20,
-        "max_overflow": 10,
-        "pool_pre_ping": True,
-    })
+    is_celery = any("celery" in arg.lower() for arg in sys.argv) or os.environ.get("DB_POOL_CLASS") == "NullPool"
+    if is_celery:
+        engine_kwargs["poolclass"] = NullPool
+    else:
+        engine_kwargs.update({
+            "pool_size": 20,
+            "max_overflow": 10,
+            "pool_pre_ping": True,
+        })
 
 default_sqlite_file = "test.db" if (os.environ.get("ENVIRONMENT") == "test" or settings.ENVIRONMENT == "test") else "prsmith.db"
 
