@@ -1,0 +1,63 @@
+name: PRSmith PR Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  prsmith-review:
+    name: PRSmith Autonomous Review
+    runs-on: ubuntu-latest
+    # Only run on non-draft PRs
+    if: github.event.pull_request.draft == false
+
+    permissions:
+      pull-requests: write   # Post review comments
+      contents: read         # Read repo contents
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Build PRSmith analysis image
+        run: |
+          docker build \
+            -f docker/analysis.Dockerfile \
+            -t prsmith-analysis:latest \
+            ./docker
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install PRSmith
+        run: pip install -e ".[dev]"
+
+      - name: Run PRSmith Review
+        env:
+          # LLM — set in repo secrets
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER || 'openai' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # GitHub — use built-in token
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+          # Point to a temp SQLite for this run
+          DATABASE_URL: sqlite:///./prsmith_ci.db
+          REDIS_URL: ""  # No Redis in CI — use synchronous mode
+          WORKER_CLONE_DIR: /tmp/prsmith-workspace
+          CLONE_CLEANUP: "true"
+          MAX_ITERATIONS: "3"
+        run: |
+          python -m scripts.ci_review \
+            --repo "${{ github.repository }}" \
+            --pr "${{ github.event.pull_request.number }}" \
+            --head-sha "${{ github.event.pull_request.head.sha }}"
