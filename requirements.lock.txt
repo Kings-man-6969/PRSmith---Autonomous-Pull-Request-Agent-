@@ -11,7 +11,7 @@ anthropic==0.34.1
 anyio==4.4.0
 async-timeout==4.0.3
 asyncpg==0.29.0
-attrs==24.2.0
+attrs==26.1.0
 billiard==4.2.0
 black==24.8.0
 certifi==2024.7.4
