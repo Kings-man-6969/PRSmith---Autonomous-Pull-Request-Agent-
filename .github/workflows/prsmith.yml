@@ -39,7 +39,9 @@ jobs:
           cache: "pip"
 
       - name: Install PRSmith
-        run: pip install -e ".[dev]"
+        run: |
+          pip install -r requirements.lock.txt
+          pip install -e ".[dev]"
 
       - name: Run PRSmith Review
         env:
