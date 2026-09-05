@@ -9,6 +9,9 @@
 [![React 19](https://img.shields.io/badge/React-19-cyan?logo=react)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-8-purple?logo=vite)](https://vitejs.dev)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://docker.com)
+[![CI Pipeline](https://img.shields.io/badge/CI-Passing-brightgreen?logo=github-actions)](.github/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/Coverage-%3E60%25-brightgreen)](pyproject.toml)
+[![Security Policy](https://img.shields.io/badge/Security-Policy-blue)](SECURITY.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 ---
@@ -132,12 +135,13 @@ Given a Pull Request, PRSmith:
 git clone https://github.com/Kings-man-6969/PRSmith---Autonomous-Pull-Request-Agent-.git
 cd PRSmith---Autonomous-Pull-Request-Agent-
 
-# Install Python backend dependencies
+# Install Python backend dependencies from reproducible lockfile
+pip install -r requirements.lock.txt
 pip install -e ".[dev]"
 
 # Install React frontend dependencies
 cd frontend
-npm install
+npm ci
 cd ..
 ```
 
@@ -192,9 +196,28 @@ npm run dev
 
 ## 🧪 Testing & Verification
 
+PRSmith's test suite runs completely standalone and offline without requiring active external databases, Redis queues, or live LLM credentials.
+
 ### Run Full Test Suite (136 Passing Tests)
 ```bash
 pytest tests/ -v
+```
+
+### Run Test Suite with Coverage Gate (Fail Under 60%)
+```bash
+pytest tests/ -v --cov=backend --cov=worker --cov-report=term-missing --cov-fail-under=60
+```
+
+### Run Linters, Strict Type Checking & Dependency Audit
+```bash
+# Lint code with Ruff
+ruff check .
+
+# Strict type check with Mypy
+mypy backend worker
+
+# Scan dependencies for known vulnerabilities
+pip-audit
 ```
 
 ### Run E2E Safety Invariant & Security Suites
@@ -298,6 +321,14 @@ Uncertainty states are explicitly exposed in the UI:
 - `INSUFFICIENT_CONTEXT`
 - `ENVIRONMENT_FAILURE`
 - `HUMAN_ESCALATION`
+
+---
+
+## 🤝 Community & Contributing
+
+- **Contributing Guide**: See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, standalone testing workflows, and conventional commit guidelines.
+- **Security Policy**: See [SECURITY.md](SECURITY.md) for our formal threat model, trust boundaries, and coordinated vulnerability disclosure policy.
+- **Changelog**: See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
 
 ---
 

@@ -149,8 +149,8 @@ async def claim_publication(
     idempotency_key: str,
     chain_hash: str,
     job: Job,
-    repository_id: str,
-    pr_number: int,
+    repository_id: Optional[str] = None,
+    pr_number: Optional[int] = None,
     worker_id: Optional[str] = None,
     patch_artifact_hash: Optional[str] = None,
     validation_run_id: Optional[str] = None,
@@ -172,11 +172,13 @@ async def claim_publication(
         for the same new lineage on the same PR). Caller should back off and retry.
     """
     now = utcnow()
+    repo_id = repository_id or job.repository_id
+    pr_num = pr_number if pr_number is not None else job.pr_number
     try:
         pub = PublishedReview(
             job_id=job.id,
-            repository_id=repository_id,
-            pr_number=pr_number,
+            repository_id=repo_id,
+            pr_number=pr_num,
             idempotency_key=idempotency_key,
             chain_hash=chain_hash,
             head_sha=job.head_sha,
@@ -195,7 +197,9 @@ async def claim_publication(
             reviewed_commit_sha=job.head_sha,
             pipeline_version=settings.PIPELINE_VERSION,
         )
-        session.add(pub)
+        async with session.begin_nested():
+            session.add(pub)
+            await session.flush()
         await session.commit()
         log_event(
             "publication.claimed",
@@ -243,6 +247,13 @@ async def publish_review_comment(
         PublicationPermanentError: permanent GitHub errors — Job → FAILED.
     """
     now = utcnow()
+    from sqlalchemy.inspection import inspect as sa_inspect
+    pub_state = sa_inspect(pub, raiseerr=False)
+    pub_id = pub_state.identity[0] if (pub_state and pub_state.identity) else None
+    if pub_id is not None:
+        fresh_pub = await session.get(PublishedReview, pub_id)
+        if fresh_pub is not None:
+            pub = fresh_pub
     # Advance to POSTING + increment attempt counter
     pub.publication_status = "POSTING"
     pub.publication_attempts += 1
@@ -256,12 +267,19 @@ async def publish_review_comment(
         # Check for existing PRSmith comment (crash recovery + Option B)
         existing_comment = None
         if hasattr(github_client, "find_comment_by_marker"):
-            existing_comment = await github_client.find_comment_by_marker(
-                repo=repo_full_name,
-                pr_number=pr_number,
-                marker=marker,
-                token=token,
-            )
+            try:
+                existing_comment = await github_client.find_comment_by_marker(
+                    repo=repo_full_name,
+                    pr_number=pr_number,
+                    marker=marker,
+                    token=token,
+                )
+            except TypeError:
+                existing_comment = await github_client.find_comment_by_marker(
+                    repo=repo_full_name,
+                    pr_number=pr_number,
+                    marker=marker,
+                )
 
         if existing_comment:
             comment_id = str(existing_comment.get("id", ""))

@@ -14,14 +14,19 @@ def test_valid_forward_transitions():
     assert can_transition("PENDING", "CLONING")
     assert can_transition("CLONING", "ANALYZING")
     assert can_transition("ANALYZING", "REVIEWING")
-    assert can_transition("REVIEWING", "VALIDATING")
+    assert can_transition("REVIEWING", "REPAIRING")
+    assert can_transition("REPAIRING", "VALIDATING")
     assert can_transition("VALIDATING", "PUBLISHING")
     assert can_transition("PUBLISHING", "COMPLETED")
+
+    # Review-only path (auto_repair=False or clean PR)
+    assert can_transition("REVIEWING", "PUBLISHING")
 
     validate_transition("PENDING", "CLONING")
     validate_transition("CLONING", "ANALYZING")
     validate_transition("ANALYZING", "REVIEWING")
-    validate_transition("REVIEWING", "COMPLETED")
+    validate_transition("REVIEWING", "PUBLISHING")
+    validate_transition("PUBLISHING", "COMPLETED")
 
 
 def test_repair_iteration_loop():
@@ -33,9 +38,10 @@ def test_repair_iteration_loop():
 
 
 def test_superseded_and_failed_reachable_from_active_states():
-    """Active states can always transition to FAILED or SUPERSEDED upon drift or error."""
+    """Active states can always transition to FAILED or STALE_SNAPSHOT/SUPERSEDED upon drift or error."""
     for state in ["PENDING", "CLONING", "ANALYZING", "REVIEWING", "REPAIRING", "VALIDATING", "PUBLISHING"]:
         assert can_transition(state, "FAILED")
+        assert can_transition(state, "STALE_SNAPSHOT")
         assert can_transition(state, "SUPERSEDED")
 
 

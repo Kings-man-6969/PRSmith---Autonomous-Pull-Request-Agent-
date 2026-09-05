@@ -234,7 +234,7 @@ async def test_scenario_7_fully_valid_pipeline_posts_exactly_one_comment():
         # Marker was included in the posted body
         called_args, called_kwargs = mock_github.post_review_comment.call_args
         posted_body = called_kwargs.get("body", "")
-        assert "<!-- prsmith:pub:" in posted_body
+        assert "<!-- prsmith:review:" in posted_body
 
 
 @pytest.mark.asyncio

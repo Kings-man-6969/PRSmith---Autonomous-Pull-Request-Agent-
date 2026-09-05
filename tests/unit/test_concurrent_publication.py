@@ -12,13 +12,13 @@ class ConcurrentMockGitHubClient:
     def __init__(self):
         self.posted_comments = []
 
-    async def find_comment_by_marker(self, repo, pr_number, marker):
+    async def find_comment_by_marker(self, repo, pr_number, marker, **kwargs):
         for c in self.posted_comments:
             if marker in c["body"]:
                 return c
         return None
 
-    async def post_review_comment(self, repo, pr_number, body):
+    async def post_review_comment(self, repo, pr_number, body, **kwargs):
         comment = {
             "id": f"gh-comment-{len(self.posted_comments) + 1}",
             "repo": repo,
