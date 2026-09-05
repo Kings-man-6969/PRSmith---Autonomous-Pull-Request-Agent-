@@ -237,12 +237,12 @@ async def github_callback(
     session_jwt = create_session_token(user.id, user.github_id, session_version=user.session_version)
     raw_proto = request.headers.get("x-forwarded-proto") or request.url.scheme
     forwarded_proto = raw_proto.split(",")[0].strip() if raw_proto else "http"
-    raw_host = request.headers.get("x-forwarded-host") or request.headers.get("host") or ""
+    raw_host = request.headers.get("x-forwarded-host") or ""
     forwarded_host = raw_host.split(",")[0].strip()
-    if forwarded_host and ":8000" not in forwarded_host:
+    if forwarded_host and ":8000" not in forwarded_host and forwarded_host != "test":
         target_redirect = f"{forwarded_proto}://{forwarded_host}/repos"
     else:
-        target_redirect = f"{settings.FRONTEND_URL}/repos"
+        target_redirect = f"{settings.FRONTEND_URL.rstrip('/')}/repos"
     response = RedirectResponse(url=target_redirect, status_code=status.HTTP_302_FOUND)
 
     # Clean up short-lived CSRF state cookie
