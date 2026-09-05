@@ -49,6 +49,7 @@ dev = [
     "mypy>=1.10.0",
     "black>=24.4.2",
     "types-redis>=4.6.0",
+    "pip-audit>=2.7.0",
 ]
 
 [tool.ruff]
@@ -76,6 +77,16 @@ addopts = "-v --tb=short"
 [tool.coverage.run]
 source = ["backend", "worker"]
 omit = ["tests/*", "*/__init__.py"]
+
+[tool.coverage.report]
+fail_under = 60
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
 
 [tool.setuptools]
 packages = ["backend", "worker"]
