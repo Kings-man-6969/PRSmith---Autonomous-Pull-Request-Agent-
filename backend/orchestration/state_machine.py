@@ -42,12 +42,14 @@ STATUS_COMPLETED = "COMPLETED"
 STATUS_FAILED = "FAILED"
 STATUS_ESCALATED = "ESCALATED"       # Human escalation — distinct from technical failure
 STATUS_STALE_SNAPSHOT = "STALE_SNAPSHOT"  # Job superseded by a newer commit on the same PR
+STATUS_SUPERSEDED = "SUPERSEDED"          # Backward-compatible alias for STATUS_STALE_SNAPSHOT
 
 TERMINAL_STATES: Set[str] = {
     STATUS_COMPLETED,
     STATUS_FAILED,
     STATUS_ESCALATED,       # Repair budget exhausted, validation permanently failed, human-required
     STATUS_STALE_SNAPSHOT,  # Superseded by new commit — links to superseded_by_job_id
+    STATUS_SUPERSEDED,
 }
 
 # ── Formal directed transition graph ─────────────────────────────────────────
@@ -117,8 +119,10 @@ COMPLETION_REASON_PUBLICATION_FAILED = "PUBLICATION_FAILED"
 
 def can_transition(current_status: str, target_status: str) -> bool:
     """Check whether a transition between two statuses is permissible."""
-    allowed = TRANSITION_GRAPH.get(current_status, set())
-    return target_status in allowed
+    curr = STATUS_STALE_SNAPSHOT if current_status == STATUS_SUPERSEDED else current_status
+    tgt = STATUS_STALE_SNAPSHOT if target_status == STATUS_SUPERSEDED else target_status
+    allowed = TRANSITION_GRAPH.get(curr, set())
+    return tgt in allowed
 
 
 def validate_transition(current_status: str, target_status: str) -> None:
