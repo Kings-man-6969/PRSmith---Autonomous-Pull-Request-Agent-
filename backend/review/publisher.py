@@ -209,6 +209,7 @@ async def claim_publication(
         )
         return pub
     except IntegrityError:
+        await session.rollback()
         logger.info(
             "Publication already claimed or active-PR index fired",
             idempotency_key=idempotency_key,
